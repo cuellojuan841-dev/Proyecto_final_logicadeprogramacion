@@ -6,6 +6,7 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.Route;
 
 @Route("")
@@ -33,7 +34,16 @@ public class MainView extends VerticalLayout {
                 return;
             }
 
-            Notification.show("Bienvenido " + usuarioEncontrado.getNombre() + " (" + usuarioEncontrado.getRole() + ")");
+            Notification.show("Bienvenido " + usuarioEncontrado.getNombre());
+
+            String role = usuarioEncontrado.getRole();
+            if ("PROFESOR".equalsIgnoreCase(role) || "ROLE_PROFESOR".equalsIgnoreCase(role)) {
+                UI.getCurrent().navigate("profesor");
+            } else if ("ESTUDIANTE".equalsIgnoreCase(role) || "ROLE_ESTUDIANTE".equalsIgnoreCase(role)) {
+                UI.getCurrent().navigate("estudiante");
+            } else {
+                Notification.show("El rol de este usuario no tiene una vista asignada.");
+            }
         });
 
         add(titulo, usuarioField, passwordField, loginButton);

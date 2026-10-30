@@ -1,5 +1,7 @@
 package com.example.notascurso;
 
+import com.vaadin.flow.server.VaadinSession;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,15 +10,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class servicio {
-
     public cuentaUsuario autenticar(String usuario, String contraseña) {
         List<cuentaUsuario> usuarios = cargarUsuarios();
         for (cuentaUsuario u : usuarios) {
             if (u.getUsuario().equals(usuario) && u.getContraseña().equals(contraseña)) {
+                VaadinSession session = VaadinSession.getCurrent();
+                if (session != null) {
+                    session.setAttribute(cuentaUsuario.class, u);
+                }
                 return u;
             }
         }
+        VaadinSession session = VaadinSession.getCurrent();
+        if (session != null) {
+            session.setAttribute(cuentaUsuario.class, null);
+        }
         return null;
+    }
+
+    public cuentaUsuario getUsuarioActual() {
+        VaadinSession session = VaadinSession.getCurrent();
+        return session == null ? null : session.getAttribute(cuentaUsuario.class);
     }
 
     public List<cuentaUsuario> cargarUsuarios() {
