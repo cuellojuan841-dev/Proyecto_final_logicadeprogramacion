@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalDouble;
 
-@Route("profesor")
+@Route(value = "profesor", layout = DashboardLayout.class)
 @PageTitle("Notas del curso | Profesor")
 public class ProfesorView extends VerticalLayout {
     private static final List<String> ASIGNATURAS = List.of(

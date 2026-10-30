@@ -6,6 +6,7 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -13,7 +14,7 @@ import com.vaadin.flow.router.Route;
 import java.io.IOException;
 import java.util.List;
 
-@Route("estudiante")
+@Route(value = "estudiante", layout = DashboardLayout.class)
 @PageTitle("Notas del curso | Estudiante")
 public class EstudianteView extends VerticalLayout {
     private static final List<String> ASIGNATURAS = List.of(
@@ -54,12 +55,27 @@ public class EstudianteView extends VerticalLayout {
         contenido.setSpacing(true);
 
         try {
+            HorizontalLayout filaPeriodos = new HorizontalLayout();
+            filaPeriodos.setWidthFull();
+            filaPeriodos.setSpacing(true);
+            filaPeriodos.getStyle().set("overflow-x", "auto");
+
             for (int periodo = 1; periodo <= 3; periodo++) {
                 Double valor = notasService.obtenerNota(
                         estudiante.getUsuario(), asignatura, periodo);
-                contenido.add(new Span("Período " + periodo + " (" + pesoPeriodo(periodo)
-                        + "%): " + (valor == null ? "Pendiente" : formato(valor))));
+                VerticalLayout tarjetaPeriodo = new VerticalLayout(
+                        new Span("Período " + periodo),
+                        new H3(pesoPeriodo(periodo) + "%"),
+                        new Span(valor == null ? "Pendiente" : "Nota: " + formato(valor))
+                );
+                tarjetaPeriodo.setMinWidth("140px");
+                tarjetaPeriodo.setSpacing(false);
+                tarjetaPeriodo.getStyle()
+                        .set("border", "1px solid #dddddd")
+                        .set("border-radius", "8px");
+                filaPeriodos.add(tarjetaPeriodo);
             }
+            contenido.add(filaPeriodos);
             contenido.add(new Span(calcularProyeccion(estudiante, asignatura)));
         } catch (IOException e) {
             Notification.show("No se pudieron leer las notas: " + e.getMessage());
