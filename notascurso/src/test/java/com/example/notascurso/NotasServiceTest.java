@@ -2,13 +2,12 @@ package com.example.notascurso;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.OptionalDouble;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -25,12 +24,12 @@ class NotasServiceTest {
         servicio.guardarNota("estudiante1", "Inglés", 1, 3.8);
 
         assertEquals(3.8, servicio.obtenerNota("estudiante1", "Inglés", 1));
-        assertEquals(3.8, servicio.promedioActual("estudiante1", "Inglés").orElseThrow(), 1e-9);
+        assertEquals(3.8, servicio.promedioActual("estudiante1", "Inglés"), 1e-9);
         assertEquals(3.8, new NotasService(archivo)
                 .obtenerNota("estudiante1", "Inglés", 1));
         assertTrue(servicio.eliminarNota("estudiante1", "Inglés", 1));
         assertFalse(servicio.eliminarNota("estudiante1", "Inglés", 1));
-        assertTrue(servicio.promedioActual("estudiante1", "Inglés").isEmpty());
+        assertNull(servicio.promedioActual("estudiante1", "Inglés"));
     }
 
     @Test
@@ -39,9 +38,9 @@ class NotasServiceTest {
         servicio.guardarNota("estudiante1", "Física", 1, 4.0);
         servicio.guardarNota("estudiante1", "Física", 3, 5.0);
 
-        OptionalDouble promedio = servicio.promedioActual("estudiante1", "Física");
+        Double promedio = servicio.promedioActual("estudiante1", "Física");
 
-        assertEquals((4.0 * 0.30 + 5.0 * 0.40) / 0.70, promedio.orElseThrow(), 1e-9);
+        assertEquals((4.0 * 0.30 + 5.0 * 0.40) / 0.70, promedio, 1e-9);
         assertEquals(0.30, servicio.porcentajePendiente("estudiante1", "Física"), 1e-9);
         assertEquals(3.2, servicio.puntosAcumulados("estudiante1", "Física"), 1e-9);
     }

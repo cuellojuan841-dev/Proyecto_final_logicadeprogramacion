@@ -1,0 +1,3 @@
+estudiante1|Redes de datos|1|2.9
+estudiante1|Redes de datos|2|5.0
+estudiante1|Redes de datos|3|3.0

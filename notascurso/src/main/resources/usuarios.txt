@@ -1,2 +1,4 @@
 profesor1;1234;Daniel Castillo;PROFESOR;Matemáticas,Historia,Programación
+profesor2;1234;Guillermo Leon;PROFESOR;Matemáticas
 estudiante1;1234;Juan Andres;ESTUDIANTE;Matemáticas,Historia
+estudiante2;1234;Samuel Grajales;ESTUDIANTE;Matemáticas,Historia

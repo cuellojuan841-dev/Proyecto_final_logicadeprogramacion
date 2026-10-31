@@ -4,9 +4,10 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -18,7 +19,6 @@ import com.vaadin.flow.router.Route;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.OptionalDouble;
 
 @Route(value = "profesor", layout = DashboardLayout.class)
 @PageTitle("Notas del curso | Profesor")
@@ -44,14 +44,21 @@ public class ProfesorView extends VerticalLayout {
         cuentaUsuario usuarioActual = usuarioService.getUsuarioActual();
         if (usuarioActual == null || !esProfesor(usuarioActual)) {
             add(new H2("Gestión de notas"),
-                    new Span("Inicia sesión con una cuenta de profesor para continuar."));
+                    new Paragraph("Inicia sesión con una cuenta de profesor para continuar."));
             estudiantes = List.of();
             return;
         }
 
-        estudiantes = usuarioService.cargarUsuarios().stream()
-                .filter(ProfesorView::esEstudiante)
-                .toList();
+        add(new H1("Bienvenido profesor " + usuarioActual.getNombre()));
+
+        List<cuentaUsuario> usuarios = usuarioService.cargarUsuarios();
+        List<cuentaUsuario> listaEstudiantes = new ArrayList<>();
+        for (cuentaUsuario usuario : usuarios) {
+            if (esEstudiante(usuario)) {
+                listaEstudiantes.add(usuario);
+            }
+        }
+        estudiantes = listaEstudiantes;
 
         add(new H2("Gestión de notas"), new H3("Seleccione una materia"));
 
@@ -90,7 +97,7 @@ public class ProfesorView extends VerticalLayout {
         detalleAsignatura.add(new H2(asignatura));
 
         if (estudiantes.isEmpty()) {
-            detalleAsignatura.add(new Span("No hay estudiantes registrados en usuarios.txt."));
+            detalleAsignatura.add(new Paragraph("No hay estudiantes registrados en usuarios.txt."));
             return;
         }
 
@@ -131,38 +138,46 @@ public class ProfesorView extends VerticalLayout {
                 .set("border", "1px solid #dddddd")
                 .set("border-radius", "8px");
 
-        List<Double> promedios = new ArrayList<>();
+        double suma = 0;
+        double mayor = 0;
+        double menor = 5;
+        int cantidadConNotas = 0;
         int aprobados = 0;
         for (cuentaUsuario estudiante : estudiantes) {
-            OptionalDouble promedio = notasService.promedioActual(
-                    estudiante.getUsuario(), asignatura);
-            if (promedio.isPresent()) {
-                promedios.add(promedio.getAsDouble());
-                if (promedio.getAsDouble() >= 3.0) {
+            Double promedio = notasService.promedioActual(estudiante.getUsuario(), asignatura);
+            if (promedio != null) {
+                suma += promedio;
+                cantidadConNotas++;
+                if (promedio > mayor) {
+                    mayor = promedio;
+                }
+                if (promedio < menor) {
+                    menor = promedio;
+                }
+                if (promedio >= 3.0) {
                     aprobados++;
                 }
             }
         }
 
-        if (promedios.isEmpty()) {
-            reporte.add(new H3("Reporte del grupo"), new Span("Aún no hay notas registradas."));
+        if (cantidadConNotas == 0) {
+            reporte.add(new H3("Reporte del grupo"),
+                    new Paragraph("Aún no hay notas registradas."));
             return reporte;
         }
 
-        double suma = promedios.stream().mapToDouble(Double::doubleValue).sum();
-        double promedioGrupo = suma / promedios.size();
-        double mayor = promedios.stream().mapToDouble(Double::doubleValue).max().orElseThrow();
-        double menor = promedios.stream().mapToDouble(Double::doubleValue).min().orElseThrow();
-        double porcentajeAprobados = aprobados / (double) promedios.size();
+        double promedioGrupo = suma / cantidadConNotas;
+        double porcentajeAprobados = aprobados / (double) cantidadConNotas;
 
         ProgressBar progreso = new ProgressBar(0, 1, porcentajeAprobados);
         progreso.setWidthFull();
         reporte.add(
                 new H3("Reporte del grupo (promedios actuales)"),
-                new Span("Promedio del grupo: " + formato(promedioGrupo)),
-                new Span("Nota más alta: " + formato(mayor)),
-                new Span("Nota más baja: " + formato(menor)),
-                new Span("Estudiantes aprobados: " + Math.round(porcentajeAprobados * 100) + "%"),
+                new Paragraph("Promedio del grupo: " + formato(promedioGrupo)),
+                new Paragraph("Nota más alta: " + formato(mayor)),
+                new Paragraph("Nota más baja: " + formato(menor)),
+                new Paragraph("Estudiantes aprobados: "
+                        + Math.round(porcentajeAprobados * 100) + "%"),
                 progreso
         );
         return reporte;
@@ -217,7 +232,7 @@ public class ProfesorView extends VerticalLayout {
         dialogo.setHeaderTitle("Confirmar borrado");
 
         ComboBox<Integer> periodo = crearSelectorPeriodo();
-        Span confirmacion = new Span("¿Seguro de borrar la nota del período "
+        Paragraph confirmacion = new Paragraph("¿Seguro de borrar la nota del período "
                 + periodo.getValue() + " de " + estudiante.getNombre() + "?");
         periodo.addValueChangeListener(event -> {
             if (event.getValue() != null) {
@@ -292,9 +307,9 @@ public class ProfesorView extends VerticalLayout {
 
     private String textoPromedio(cuentaUsuario estudiante, String asignatura) {
         try {
-            OptionalDouble promedio = notasService.promedioActual(
+            Double promedio = notasService.promedioActual(
                     estudiante.getUsuario(), asignatura);
-            return promedio.isPresent() ? formato(promedio.getAsDouble()) : "Sin notas";
+            return promedio == null ? "Sin notas" : formato(promedio);
         } catch (IOException e) {
             return "Error de lectura";
         }
@@ -305,10 +320,10 @@ public class ProfesorView extends VerticalLayout {
         int materiasCalificadas = 0;
         try {
             for (String asignatura : ASIGNATURAS) {
-                OptionalDouble promedio = notasService.promedioActual(
+                Double promedio = notasService.promedioActual(
                         estudiante.getUsuario(), asignatura);
-                if (promedio.isPresent()) {
-                    suma += promedio.getAsDouble();
+                if (promedio != null) {
+                    suma += promedio;
                     materiasCalificadas++;
                 }
             }
@@ -320,14 +335,14 @@ public class ProfesorView extends VerticalLayout {
         }
     }
 
-    private Span indicadorRiesgo(cuentaUsuario estudiante, String asignatura) {
-        Span estado = new Span();
+    private Paragraph indicadorRiesgo(cuentaUsuario estudiante, String asignatura) {
+        Paragraph estado = new Paragraph();
         try {
-            OptionalDouble promedio = notasService.promedioActual(
+            Double promedio = notasService.promedioActual(
                     estudiante.getUsuario(), asignatura);
-            if (promedio.isEmpty()) {
+            if (promedio == null) {
                 estado.setText("Sin notas");
-            } else if (promedio.getAsDouble() < 3.0) {
+            } else if (promedio < 3.0) {
                 estado.setText("En riesgo");
                 estado.getStyle()
                         .set("color", "#842029")

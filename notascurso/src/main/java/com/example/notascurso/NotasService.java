@@ -6,9 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.OptionalDouble;
 
 public class NotasService {
     private static final double[] PESOS = {0.30, 0.30, 0.40};
@@ -23,23 +21,35 @@ public class NotasService {
     }
 
     public List<Nota> obtenerNotas(String asignatura) throws IOException {
-        return leerTodas().stream()
-                .filter(nota -> nota.getAsignatura().equals(asignatura))
-                .toList();
+        List<Nota> resultado = new ArrayList<>();
+        List<Nota> notas = leerTodas();
+        for (Nota nota : notas) {
+            if (nota.getAsignatura().equals(asignatura)) {
+                resultado.add(nota);
+            }
+        }
+        return resultado;
     }
 
     public List<Nota> obtenerNotasEstudiante(String usuario) throws IOException {
-        return leerTodas().stream()
-                .filter(nota -> nota.getUsuarioEstudiante().equals(usuario))
-                .toList();
+        List<Nota> resultado = new ArrayList<>();
+        List<Nota> notas = leerTodas();
+        for (Nota nota : notas) {
+            if (nota.getUsuarioEstudiante().equals(usuario)) {
+                resultado.add(nota);
+            }
+        }
+        return resultado;
     }
 
     public Double obtenerNota(String usuario, String asignatura, int periodo) throws IOException {
-        return leerTodas().stream()
-                .filter(nota -> coincide(nota, usuario, asignatura, periodo))
-                .map(Nota::getValor)
-                .findFirst()
-                .orElse(null);
+        List<Nota> notas = leerTodas();
+        for (Nota nota : notas) {
+            if (coincide(nota, usuario, asignatura, periodo)) {
+                return nota.getValor();
+            }
+        }
+        return null;
     }
 
     public void guardarNota(String usuario, String asignatura, int periodo, double valor)
@@ -65,7 +75,7 @@ public class NotasService {
         return eliminada;
     }
 
-    public OptionalDouble promedioActual(String usuario, String asignatura) throws IOException {
+    public Double promedioActual(String usuario, String asignatura) throws IOException {
         List<Nota> notas = notasDeEstudianteYMateria(leerTodas(), usuario, asignatura);
         double puntos = 0;
         double pesoCalificado = 0;
@@ -77,9 +87,9 @@ public class NotasService {
         }
 
         if (pesoCalificado == 0) {
-            return OptionalDouble.empty();
+            return null;
         }
-        return OptionalDouble.of(puntos / pesoCalificado);
+        return puntos / pesoCalificado;
     }
 
     public double puntosAcumulados(String usuario, String asignatura) throws IOException {
@@ -139,16 +149,14 @@ public class NotasService {
             Files.createDirectories(carpeta);
         }
 
-        List<String> lineas = notas.stream()
-                .sorted(Comparator.comparing(Nota::getUsuarioEstudiante)
-                        .thenComparing(Nota::getAsignatura)
-                        .thenComparingInt(Nota::getPeriodo))
-                .map(nota -> String.join("|",
-                        nota.getUsuarioEstudiante(),
-                        nota.getAsignatura(),
-                        Integer.toString(nota.getPeriodo()),
-                        Double.toString(nota.getValor())))
-                .toList();
+        List<String> lineas = new ArrayList<>();
+        for (Nota nota : notas) {
+            String linea = nota.getUsuarioEstudiante() + "|"
+                    + nota.getAsignatura() + "|"
+                    + nota.getPeriodo() + "|"
+                    + nota.getValor();
+            lineas.add(linea);
+        }
 
         Files.write(archivo, lineas, StandardCharsets.UTF_8,
                 StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
@@ -156,10 +164,14 @@ public class NotasService {
 
     private static List<Nota> notasDeEstudianteYMateria(
             List<Nota> notas, String usuario, String asignatura) {
-        return notas.stream()
-                .filter(nota -> nota.getUsuarioEstudiante().equals(usuario)
-                        && nota.getAsignatura().equals(asignatura))
-                .toList();
+        List<Nota> resultado = new ArrayList<>();
+        for (Nota nota : notas) {
+            if (nota.getUsuarioEstudiante().equals(usuario)
+                    && nota.getAsignatura().equals(asignatura)) {
+                resultado.add(nota);
+            }
+        }
+        return resultado;
     }
 
     private static boolean coincide(Nota nota, String usuario, String asignatura, int periodo) {

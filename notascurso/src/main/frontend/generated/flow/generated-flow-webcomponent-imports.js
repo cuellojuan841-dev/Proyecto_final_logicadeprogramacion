@@ -1,7 +1,7 @@
 import { injectGlobalWebcomponentCss } from 'Frontend/generated/jar-resources/theme-util.js';
 
-import '@vaadin/app-layout/src/vaadin-app-layout.js';
 import '@vaadin/vertical-layout/src/vaadin-vertical-layout.js';
+import '@vaadin/app-layout/src/vaadin-app-layout.js';
 import '@vaadin/field-highlighter/src/vaadin-field-highlighter.js';
 import '@vaadin/common-frontend/ConnectionIndicator.js';
 import '@vaadin/accordion/src/vaadin-accordion.js';

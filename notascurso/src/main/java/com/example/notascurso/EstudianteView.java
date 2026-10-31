@@ -4,7 +4,7 @@ import com.vaadin.flow.component.accordion.Accordion;
 import com.vaadin.flow.component.accordion.AccordionPanel;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -17,7 +17,7 @@ import java.util.List;
 @Route(value = "estudiante", layout = DashboardLayout.class)
 @PageTitle("Notas del curso | Estudiante")
 public class EstudianteView extends VerticalLayout {
-    private static final List<String> ASIGNATURAS = List.of(
+     static final List<String> ASIGNATURAS = List.of(
             "Inglés",
             "Lógica de programación",
             "Cálculo integral",
@@ -25,8 +25,8 @@ public class EstudianteView extends VerticalLayout {
             "Redes de datos"
     );
 
-    private final servicio usuarioService = new servicio();
-    private final NotasService notasService = new NotasService();
+     final servicio usuarioService = new servicio();
+     final NotasService notasService = new NotasService();
 
     public EstudianteView() {
         setWidthFull();
@@ -35,7 +35,7 @@ public class EstudianteView extends VerticalLayout {
 
         cuentaUsuario estudiante = usuarioService.getUsuarioActual();
         if (estudiante == null || !esEstudiante(estudiante)) {
-            add(new Span("Inicia sesión con una cuenta de estudiante para consultar tus notas."));
+            add(new Paragraph("Inicia sesión con una cuenta de estudiante para consultar tus notas."));
             return;
         }
 
@@ -64,9 +64,9 @@ public class EstudianteView extends VerticalLayout {
                 Double valor = notasService.obtenerNota(
                         estudiante.getUsuario(), asignatura, periodo);
                 VerticalLayout tarjetaPeriodo = new VerticalLayout(
-                        new Span("Período " + periodo),
+                        new Paragraph("Período " + periodo),
                         new H3(pesoPeriodo(periodo) + "%"),
-                        new Span(valor == null ? "Pendiente" : "Nota: " + formato(valor))
+                        new Paragraph(valor == null ? "Pendiente" : "Nota: " + formato(valor))
                 );
                 tarjetaPeriodo.setMinWidth("140px");
                 tarjetaPeriodo.setSpacing(false);
@@ -76,10 +76,10 @@ public class EstudianteView extends VerticalLayout {
                 filaPeriodos.add(tarjetaPeriodo);
             }
             contenido.add(filaPeriodos);
-            contenido.add(new Span(calcularProyeccion(estudiante, asignatura)));
+            contenido.add(new Paragraph(calcularProyeccion(estudiante, asignatura)));
         } catch (IOException e) {
             Notification.show("No se pudieron leer las notas: " + e.getMessage());
-            contenido.add(new Span("No fue posible cargar las notas de esta asignatura."));
+            contenido.add(new Paragraph("No fue posible cargar las notas de esta asignatura."));
         }
 
         return new AccordionPanel(new H3(asignatura), contenido);
