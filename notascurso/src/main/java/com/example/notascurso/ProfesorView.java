@@ -15,7 +15,9 @@ import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.value.ValueChangeMode;
+import java.util.Locale;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -93,6 +95,16 @@ public class ProfesorView extends VerticalLayout {
     }
 
     private void mostrarAsignatura(String asignatura) {
+        TextField busqueda = new TextField("buscar estudiante");
+        busqueda.setPlaceholder("escribe un nombre "); 
+        busqueda.setClearButtonVisible((true));
+        busqueda.setValueChangeMode(ValueChangeMode.EAGER);
+        ComboBox<String> filtroEstado = new ComboBox<>("filtrar promedio");
+        filtroEstado.setItems("Todos", "Sin notas", "Menor a 3.0", "3.0 o más");
+        filtroEstado.setValue("Todos");
+        
+    HorizontalLayout filtros = new HorizontalLayout(busqueda, filtroEstado);
+        filtros.setWidthFull();
         detalleAsignatura.removeAll();
         detalleAsignatura.add(new H2(asignatura));
 
@@ -122,11 +134,54 @@ public class ProfesorView extends VerticalLayout {
                 .setHeader("Acciones").setAutoWidth(true);
         grid.setItems(estudiantes);
 
+Runnable actualizarGrid = () -> {
+    String texto = busqueda.getValue() == null
+            ? ""
+            : busqueda.getValue().trim().toLowerCase(Locale.ROOT);
+    String estado = filtroEstado.getValue();
+
+    List<cuentaUsuario> resultados = new ArrayList<>();
+
+    try {
+        for (cuentaUsuario estudiante : estudiantes) {
+            String nombre = estudiante.getNombre() == null
+                    ? ""
+                    : estudiante.getNombre().toLowerCase(Locale.ROOT);
+
+            if (!nombre.contains(texto)) {
+                continue;
+            }
+
+            Double promedio = notasService.promedioActual(
+                    estudiante.getUsuario(), asignatura);
+
+            boolean coincideEstado =
+                    "Todos".equals(estado)
+                    || ("Sin notas".equals(estado) && promedio == null)
+                    || ("Menor a 3.0".equals(estado)
+                            && promedio != null && promedio < 3.0)
+                    || ("3.0 o más".equals(estado)
+                            && promedio != null && promedio >= 3.0);
+
+            if (coincideEstado) {
+                resultados.add(estudiante);
+            }
+        }
+
+        grid.setItems(resultados);
+    } catch (IOException e) {
+        Notification.show("No se pudo filtrar la lista: " + e.getMessage());
+    }
+};
+
+busqueda.addValueChangeListener(event -> actualizarGrid.run());
+filtroEstado.addValueChangeListener(event -> actualizarGrid.run());
+
         try {
-            detalleAsignatura.add(crearReporte(asignatura), grid);
+           detalleAsignatura.add(crearReporte(asignatura), filtros, grid);
         } catch (IOException e) {
             Notification.show("No se pudieron leer las notas: " + e.getMessage());
-            detalleAsignatura.add(grid);
+           detalleAsignatura.add(filtros, grid);
         }
     }
 
