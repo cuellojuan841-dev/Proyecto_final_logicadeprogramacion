@@ -1,4 +1,19 @@
-profesor1;1234;Daniel Castillo;PROFESOR;Matemáticas,Historia,Programación
-profesor2;1234;Guillermo Leon;PROFESOR;Matemáticas
-estudiante1;1234;Juan Andres;ESTUDIANTE;Matemáticas,Historia
-estudiante2;1234;Samuel Grajales;ESTUDIANTE;Matemáticas,Historia
+profesor1|1234|Daniel Castillo|PROFESOR|Programación
+profesor2|1234|Guillermo Leon|PROFESOR|Matemáticas
+profesor3|1234|Edwin Duque|PROFESOR|ingles
+profesor4|1234|Juan Carlos Mesa|PROFESOR|ingles, Historia
+profesor5|1234|Jackson Reina|PROFESOR|redes de datos
+profesor6|1234|Felipe Cadavid|PROFESOR|Programación
+profesor7|1234|Laura Méndez|PROFESOR|Matemáticas
+profesor8|1234|Andrés Pérez|PROFESOR|Historia, ingles
+profesor9|1234|Camila Torres|PROFESOR|Historia
+estudiante1|1234|Juan Andres|ESTUDIANTE|Matemáticas,Historia,Programación, ingles
+estudiante2|1234|Samuel Grajales|ESTUDIANTE|Matemáticas,Historia,Programación,  ingles
+estudiante3|1234|matias Ortiz|ESTUDIANTE|Matemáticas,Historia,Programación,ingles
+estudiante4|1234|Tomás Arango|ESTUDIANTE|Matemáticas,Historia,Programación,ingles
+estudiante5|1234|Yeremy Arias|ESTUDIANTE|Matemáticas,Historia,Programación, ingles
+estudiante6|1234|Samuel Gutiérrez|ESTUDIANTE|Matemáticas,Historia,Programación,ingles
+estudiante7|1234|Valentina Gómez|ESTUDIANTE|Matemáticas,Historia,Programación,  ingles
+estudiante8|1234|Mateo Rojas|ESTUDIANTE|Matemáticas,Historia,Programación,ingles
+estudiante9|1234|Sofía Ramírez|ESTUDIANTE|Matemáticas,Historia,Programación,ingles
+estudiante10|1234|karol Yuliana|ESTUDIANTE|Matemáticas,Historia,Programación,ingles

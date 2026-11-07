@@ -9,6 +9,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.Route;
 
+import java.io.IOException;
+
 @Route("")
 public class MainView extends VerticalLayout {
 
@@ -27,7 +29,13 @@ public class MainView extends VerticalLayout {
             String usuario = usuarioField.getValue();
             String password = passwordField.getValue();
 
-            cuentaUsuario usuarioEncontrado = authService.autenticar(usuario, password);
+            cuentaUsuario usuarioEncontrado;
+            try {
+                usuarioEncontrado = authService.autenticar(usuario, password);
+            } catch (IOException e) {
+                Notification.show("No se pudieron cargar los usuarios: " + e.getMessage());
+                return;
+            }
 
             if (usuarioEncontrado == null) {
                 Notification.show("Usuario o contraseña incorrectos");

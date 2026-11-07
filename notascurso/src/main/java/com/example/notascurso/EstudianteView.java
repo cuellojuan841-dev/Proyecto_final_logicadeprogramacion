@@ -17,14 +17,6 @@ import java.util.List;
 @Route(value = "estudiante", layout = DashboardLayout.class)
 @PageTitle("Notas del curso | Estudiante")
 public class EstudianteView extends VerticalLayout {
-     static final List<String> ASIGNATURAS = List.of(
-            "Inglés",
-            "Lógica de programación",
-            "Cálculo integral",
-            "Física",
-            "Redes de datos"
-    );
-
      final servicio usuarioService = new servicio();
      final NotasService notasService = new NotasService();
 
@@ -40,10 +32,16 @@ public class EstudianteView extends VerticalLayout {
         }
 
         add(new H3("Estudiante: " + estudiante.getNombre()));
+        List<String> asignaturas = estudiante.getObjetos();
+        if (asignaturas == null || asignaturas.isEmpty()) {
+            add(new Paragraph("No tienes asignaturas registradas en usuarios.txt."));
+            return;
+        }
+
         Accordion historial = new Accordion();
         historial.setWidthFull();
 
-        for (String asignatura : ASIGNATURAS) {
+        for (String asignatura : asignaturas) {
             historial.add(crearPanel(estudiante, asignatura));
         }
         add(historial);

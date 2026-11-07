@@ -25,18 +25,11 @@ import java.util.List;
 @Route(value = "profesor", layout = DashboardLayout.class)
 @PageTitle("Notas del curso | Profesor")
 public class ProfesorView extends VerticalLayout {
-    private static final List<String> ASIGNATURAS = List.of(
-            "Inglés",
-            "Lógica de programación",
-            "Cálculo integral",
-            "Física",
-            "Redes de datos"
-    );
-
     private final servicio usuarioService = new servicio();
     private final NotasService notasService = new NotasService();
     private final VerticalLayout detalleAsignatura = new VerticalLayout();
     private final List<cuentaUsuario> estudiantes;
+    private final List<String> asignaturas;
 
     public ProfesorView() {
         setWidthFull();
@@ -48,12 +41,23 @@ public class ProfesorView extends VerticalLayout {
             add(new H2("Gestión de notas"),
                     new Paragraph("Inicia sesión con una cuenta de profesor para continuar."));
             estudiantes = List.of();
+            asignaturas = List.of();
             return;
         }
 
         add(new H1("Bienvenido profesor " + usuarioActual.getNombre()));
+        asignaturas = usuarioActual.getObjetos() == null
+                ? List.of()
+                : new ArrayList<>(usuarioActual.getObjetos());
 
-        List<cuentaUsuario> usuarios = usuarioService.cargarUsuarios();
+        List<cuentaUsuario> usuarios;
+        try {
+            usuarios = usuarioService.cargarUsuarios();
+        } catch (IOException e) {
+            add(new Paragraph("No se pudieron cargar los usuarios: " + e.getMessage()));
+            estudiantes = List.of();
+            return;
+        }
         List<cuentaUsuario> listaEstudiantes = new ArrayList<>();
         for (cuentaUsuario usuario : usuarios) {
             if (esEstudiante(usuario)) {
@@ -61,6 +65,12 @@ public class ProfesorView extends VerticalLayout {
             }
         }
         estudiantes = listaEstudiantes;
+
+        if (asignaturas.isEmpty()) {
+            add(new H2("Gestión de notas"),
+                    new Paragraph("Este profesor no tiene asignaturas asignadas en usuarios.txt."));
+            return;
+        }
 
         add(new H2("Gestión de notas"), new H3("Seleccione una materia"));
 
@@ -70,7 +80,7 @@ public class ProfesorView extends VerticalLayout {
         materias.setSpacing(true);
         materias.getStyle().set("overflow-x", "auto");
 
-        for (String asignatura : ASIGNATURAS) {
+        for (String asignatura : asignaturas) {
             materias.add(crearTarjetaMateria(asignatura));
         }
 
@@ -96,20 +106,22 @@ public class ProfesorView extends VerticalLayout {
 
     private void mostrarAsignatura(String asignatura) {
         TextField busqueda = new TextField("buscar estudiante");
-        busqueda.setPlaceholder("escribe un nombre "); 
-        busqueda.setClearButtonVisible((true));
+        busqueda.setPlaceholder("escribe un nombre");
+        busqueda.setClearButtonVisible(true);
         busqueda.setValueChangeMode(ValueChangeMode.EAGER);
         ComboBox<String> filtroEstado = new ComboBox<>("filtrar promedio");
         filtroEstado.setItems("Todos", "Sin notas", "Menor a 3.0", "3.0 o más");
         filtroEstado.setValue("Todos");
-        
-    HorizontalLayout filtros = new HorizontalLayout(busqueda, filtroEstado);
+
+        HorizontalLayout filtros = new HorizontalLayout(busqueda, filtroEstado);
         filtros.setWidthFull();
         detalleAsignatura.removeAll();
         detalleAsignatura.add(new H2(asignatura));
 
-        if (estudiantes.isEmpty()) {
-            detalleAsignatura.add(new Paragraph("No hay estudiantes registrados en usuarios.txt."));
+        List<cuentaUsuario> estudiantesAsignatura = estudiantesDeAsignatura(asignatura);
+        if (estudiantesAsignatura.isEmpty()) {
+            detalleAsignatura.add(new Paragraph(
+                    "No hay estudiantes inscritos en esta asignatura."));
             return;
         }
 
@@ -132,60 +144,81 @@ public class ProfesorView extends VerticalLayout {
                 .setHeader("Estado").setAutoWidth(true);
         grid.addComponentColumn(estudiante -> botonesNotas(estudiante, asignatura))
                 .setHeader("Acciones").setAutoWidth(true);
-        grid.setItems(estudiantes);
+        grid.setItems(estudiantesAsignatura);
 
-Runnable actualizarGrid = () -> {
-    String texto = busqueda.getValue() == null
-            ? ""
-            : busqueda.getValue().trim().toLowerCase(Locale.ROOT);
-    String estado = filtroEstado.getValue();
-
-    List<cuentaUsuario> resultados = new ArrayList<>();
-
-    try {
-        for (cuentaUsuario estudiante : estudiantes) {
-            String nombre = estudiante.getNombre() == null
-                    ? ""
-                    : estudiante.getNombre().toLowerCase(Locale.ROOT);
-
-            if (!nombre.contains(texto)) {
-                continue;
-            }
-
-            Double promedio = notasService.promedioActual(
-                    estudiante.getUsuario(), asignatura);
-
-            boolean coincideEstado =
-                    "Todos".equals(estado)
-                    || ("Sin notas".equals(estado) && promedio == null)
-                    || ("Menor a 3.0".equals(estado)
-                            && promedio != null && promedio < 3.0)
-                    || ("3.0 o más".equals(estado)
-                            && promedio != null && promedio >= 3.0);
-
-            if (coincideEstado) {
-                resultados.add(estudiante);
-            }
-        }
-
-        grid.setItems(resultados);
-    } catch (IOException e) {
-        Notification.show("No se pudo filtrar la lista: " + e.getMessage());
-    }
-};
-
-busqueda.addValueChangeListener(event -> actualizarGrid.run());
-filtroEstado.addValueChangeListener(event -> actualizarGrid.run());
+        busqueda.addValueChangeListener(event ->
+                actualizarGrid(grid, estudiantesAsignatura, busqueda.getValue(),
+                        filtroEstado.getValue(), asignatura));
+        filtroEstado.addValueChangeListener(event ->
+                actualizarGrid(grid, estudiantesAsignatura, busqueda.getValue(),
+                        filtroEstado.getValue(), asignatura));
 
         try {
-           detalleAsignatura.add(crearReporte(asignatura), filtros, grid);
+            detalleAsignatura.add(crearReporte(asignatura, estudiantesAsignatura), filtros, grid);
         } catch (IOException e) {
             Notification.show("No se pudieron leer las notas: " + e.getMessage());
-           detalleAsignatura.add(filtros, grid);
+            detalleAsignatura.add(filtros, grid);
         }
     }
 
-    private VerticalLayout crearReporte(String asignatura) throws IOException {
+    private void actualizarGrid(Grid<cuentaUsuario> grid, List<cuentaUsuario> estudiantesAsignatura,
+            String textoBusqueda, String estadoSeleccionado, String asignatura) {
+        String texto = textoBusqueda == null
+                ? ""
+                : textoBusqueda.trim().toLowerCase(Locale.ROOT);
+        List<cuentaUsuario> resultados = new ArrayList<>();
+
+        try {
+            for (cuentaUsuario estudiante : estudiantesAsignatura) {
+                String nombre = estudiante.getNombre() == null
+                        ? ""
+                        : estudiante.getNombre().toLowerCase(Locale.ROOT);
+
+                if (!nombre.contains(texto)) {
+                    continue;
+                }
+
+                Double promedio = notasService.promedioActual(
+                        estudiante.getUsuario(), asignatura);
+                if (coincideConEstado(promedio, estadoSeleccionado)) {
+                    resultados.add(estudiante);
+                }
+            }
+            grid.setItems(resultados);
+        } catch (IOException e) {
+            Notification.show("No se pudo filtrar la lista: " + e.getMessage());
+        }
+    }
+
+    private List<cuentaUsuario> estudiantesDeAsignatura(String asignatura) {
+        List<cuentaUsuario> resultado = new ArrayList<>();
+        for (cuentaUsuario estudiante : estudiantes) {
+            List<String> materiasEstudiante = estudiante.getObjetos();
+            if (materiasEstudiante != null && materiasEstudiante.contains(asignatura)) {
+                resultado.add(estudiante);
+            }
+        }
+        return resultado;
+    }
+
+    private boolean coincideConEstado(Double promedio, String estado) {
+        if ("Todos".equals(estado)) {
+            return true;
+        }
+        if ("Sin notas".equals(estado)) {
+            return promedio == null;
+        }
+        if ("Menor a 3.0".equals(estado)) {
+            return promedio != null && promedio < 3.0;
+        }
+        if ("3.0 o más".equals(estado)) {
+            return promedio != null && promedio >= 3.0;
+        }
+        return false;
+    }
+
+    private VerticalLayout crearReporte(
+            String asignatura, List<cuentaUsuario> estudiantesAsignatura) throws IOException {
         VerticalLayout reporte = new VerticalLayout();
         reporte.setPadding(true);
         reporte.setSpacing(false);
@@ -198,7 +231,7 @@ filtroEstado.addValueChangeListener(event -> actualizarGrid.run());
         double menor = 5;
         int cantidadConNotas = 0;
         int aprobados = 0;
-        for (cuentaUsuario estudiante : estudiantes) {
+        for (cuentaUsuario estudiante : estudiantesAsignatura) {
             Double promedio = notasService.promedioActual(estudiante.getUsuario(), asignatura);
             if (promedio != null) {
                 suma += promedio;
@@ -374,7 +407,11 @@ filtroEstado.addValueChangeListener(event -> actualizarGrid.run());
         double suma = 0;
         int materiasCalificadas = 0;
         try {
-            for (String asignatura : ASIGNATURAS) {
+            List<String> materiasEstudiante = estudiante.getObjetos();
+            if (materiasEstudiante == null) {
+                return "Sin notas";
+            }
+            for (String asignatura : materiasEstudiante) {
                 Double promedio = notasService.promedioActual(
                         estudiante.getUsuario(), asignatura);
                 if (promedio != null) {

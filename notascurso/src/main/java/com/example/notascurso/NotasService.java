@@ -60,15 +60,27 @@ public class NotasService {
         validarNota(valor);
 
         List<Nota> notas = leerTodas();
-        notas.removeIf(nota -> coincide(nota, usuario, asignatura, periodo));
-        notas.add(new Nota(usuario, asignatura, periodo, valor));
-        guardarTodas(notas);
+        List<Nota> notasActualizadas = new ArrayList<>();
+        for (Nota nota : notas) {
+            if (!coincide(nota, usuario, asignatura, periodo)) {
+                notasActualizadas.add(nota);
+            }
+        }
+        notasActualizadas.add(new Nota(usuario, asignatura, periodo, valor));
+        guardarTodas(notasActualizadas);
     }
 
     public boolean eliminarNota(String usuario, String asignatura, int periodo) throws IOException {
         validarPeriodo(periodo);
         List<Nota> notas = leerTodas();
-        boolean eliminada = notas.removeIf(nota -> coincide(nota, usuario, asignatura, periodo));
+        boolean eliminada = false;
+        for (int indice = notas.size() - 1; indice >= 0; indice--) {
+            Nota nota = notas.get(indice);
+            if (coincide(nota, usuario, asignatura, periodo)) {
+                notas.remove(indice);
+                eliminada = true;
+            }
+        }
         if (eliminada) {
             guardarTodas(notas);
         }
