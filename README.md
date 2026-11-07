@@ -126,20 +126,18 @@ Estas capturas son de ejemplo y muestran las vistas principales del programa.
 
 ### Inicio de sesión
 
-![Inicio de sesión](docs/capturas/login.png)
+![Inicio de sesión](notascurso/docs/capturas/login.png)
 
 ### Vista del profesor
 
-![Vista del profesor](docs/capturas/profesor.png)
+![Vista del profesor](notascurso/docs/capturas/profesor.png)
 
 ### Notas del grupo
 
-![Reporte y tabla de notas](docs/capturas/notas-del-grupo.png)
+![Reporte y tabla de notas](notascurso/docs/capturas/notas-del-grupo.png)
 
 ### Vista del estudiante
-
-![Historial académico del estudiante](docs/capturas/estudiante.png)
-
+![Vista del estudiante](notascurso/docs/capturas/estudiante.png)
 ## Publicación y entrega
 
 Subir el proyecto a un repositorio público de GitHub, incluir los cambios finales y entregar el enlace en la tarea de Teams según las indicaciones del curso.
