@@ -4,6 +4,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
@@ -75,6 +76,7 @@ public class ProfesorView extends VerticalLayout {
         add(new H2("Gestión de notas"), new H3("Seleccione una materia"));
 
         HorizontalLayout materias = new HorizontalLayout();
+        materias.addClassName("materias-profesor");
         materias.setWidthFull();
         materias.setPadding(true);
         materias.setSpacing(true);
@@ -94,6 +96,7 @@ public class ProfesorView extends VerticalLayout {
         ingresarNotas.addClickListener(event -> mostrarAsignatura(nombreMateria));
 
         VerticalLayout tarjeta = new VerticalLayout(nombre, ingresarNotas);
+        tarjeta.addClassName("materia-card");
         tarjeta.setWidth("220px");
         tarjeta.setMinWidth("220px");
         tarjeta.setPadding(true);
@@ -114,7 +117,10 @@ public class ProfesorView extends VerticalLayout {
         filtroEstado.setValue("Todos");
 
         HorizontalLayout filtros = new HorizontalLayout(busqueda, filtroEstado);
+        filtros.addClassName("filtros-profesor");
         filtros.setWidthFull();
+        busqueda.setWidthFull();
+        filtroEstado.setWidthFull();
         detalleAsignatura.removeAll();
         detalleAsignatura.add(new H2(asignatura));
 
@@ -146,6 +152,10 @@ public class ProfesorView extends VerticalLayout {
                 .setHeader("Acciones").setAutoWidth(true);
         grid.setItems(estudiantesAsignatura);
 
+        Div contenedorGrid = new Div(grid);
+        contenedorGrid.addClassName("grid-scroll");
+        contenedorGrid.setWidthFull();
+
         busqueda.addValueChangeListener(event ->
                 actualizarGrid(grid, estudiantesAsignatura, busqueda.getValue(),
                         filtroEstado.getValue(), asignatura));
@@ -154,10 +164,11 @@ public class ProfesorView extends VerticalLayout {
                         filtroEstado.getValue(), asignatura));
 
         try {
-            detalleAsignatura.add(crearReporte(asignatura, estudiantesAsignatura), filtros, grid);
+            detalleAsignatura.add(crearReporte(asignatura, estudiantesAsignatura),
+                    filtros, contenedorGrid);
         } catch (IOException e) {
             Notification.show("No se pudieron leer las notas: " + e.getMessage());
-            detalleAsignatura.add(filtros, grid);
+            detalleAsignatura.add(filtros, contenedorGrid);
         }
     }
 
@@ -278,7 +289,9 @@ public class ProfesorView extends VerticalLayout {
         Button borrar = new Button("Borrar nota");
         borrar.addClickListener(event -> abrirConfirmacionBorrado(estudiante, asignatura));
 
-        return new HorizontalLayout(editar, borrar);
+        HorizontalLayout botones = new HorizontalLayout(editar, borrar);
+        botones.addClassName("botones-nota");
+        return botones;
     }
 
     private void abrirEditor(cuentaUsuario estudiante, String asignatura) {
