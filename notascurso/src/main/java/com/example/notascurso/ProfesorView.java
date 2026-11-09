@@ -2,6 +2,7 @@ package com.example.notascurso;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
@@ -25,6 +26,7 @@ import java.util.List;
 
 @Route(value = "profesor", layout = DashboardLayout.class)
 @PageTitle("Notas del curso | Profesor")
+@StyleSheet("css/siggo.css")
 public class ProfesorView extends VerticalLayout {
     private final servicio usuarioService = new servicio();
     private final NotasService notasService = new NotasService();
@@ -33,6 +35,7 @@ public class ProfesorView extends VerticalLayout {
     private final List<String> asignaturas;
 
     public ProfesorView() {
+        addClassName("profesor-view");
         setWidthFull();
         setPadding(true);
         setSpacing(true);
@@ -92,10 +95,15 @@ public class ProfesorView extends VerticalLayout {
 
     private VerticalLayout crearTarjetaMateria(String nombreMateria) {
         H3 nombre = new H3(nombreMateria);
+        nombre.addClassName("materia-title");
         Button ingresarNotas = new Button("Ingresar notas");
+        ingresarNotas.addClassName("primary-button");
         ingresarNotas.addClickListener(event -> mostrarAsignatura(nombreMateria));
+        Button configurarPlan = new Button("Configurar evaluación");
+        configurarPlan.addClassName("secondary-button");
+        configurarPlan.addClickListener(event -> abrirConfiguracionPlan(nombreMateria));
 
-        VerticalLayout tarjeta = new VerticalLayout(nombre, ingresarNotas);
+        VerticalLayout tarjeta = new VerticalLayout(nombre, ingresarNotas, configurarPlan);
         tarjeta.addClassName("materia-card");
         tarjeta.setWidth("220px");
         tarjeta.setMinWidth("220px");
@@ -124,6 +132,14 @@ public class ProfesorView extends VerticalLayout {
         detalleAsignatura.removeAll();
         detalleAsignatura.add(new H2(asignatura));
 
+        Asignatura materia;
+        try {
+            materia = notasService.obtenerAsignatura(asignatura);
+        } catch (IOException e) {
+            Notification.show("No se pudo cargar el plan de evaluación: " + e.getMessage());
+            return;
+        }
+
         List<cuentaUsuario> estudiantesAsignatura = estudiantesDeAsignatura(asignatura);
         if (estudiantesAsignatura.isEmpty()) {
             detalleAsignatura.add(new Paragraph(
@@ -132,13 +148,18 @@ public class ProfesorView extends VerticalLayout {
         }
 
         Grid<cuentaUsuario> grid = new Grid<>();
+        grid.addClassName("siggo-grid");
         grid.setWidthFull();
-        grid.addColumn(cuentaUsuario::getNombre).setHeader("Estudiante").setAutoWidth(true);
+        grid.addColumn(estudiante -> estudiante == null ? "" : estudiante.getNombre())
+                .setHeader("Estudiante").setAutoWidth(true);
 
-        for (int periodo = 1; periodo <= 3; periodo++) {
-            final int numeroPeriodo = periodo;
-            grid.addColumn(estudiante -> textoNota(estudiante, asignatura, numeroPeriodo))
-                    .setHeader("Período " + periodo + " (" + pesoPeriodo(periodo) + "%)")
+        for (int indice = 0; indice < materia.getActividades().size(); indice++) {
+            final int numeroActividad = indice + 1;
+            ActividadEvaluativa actividad = materia.getActividades().get(indice);
+            grid.addColumn(estudiante -> textoNota(
+                    estudiante, asignatura, numeroActividad))
+                    .setHeader(actividad.getNombre() + " ("
+                            + formato(actividad.getPorcentaje()) + "%)")
                     .setAutoWidth(true);
         }
 
@@ -170,6 +191,87 @@ public class ProfesorView extends VerticalLayout {
             Notification.show("No se pudieron leer las notas: " + e.getMessage());
             detalleAsignatura.add(filtros, contenedorGrid);
         }
+    }
+
+    private void abrirConfiguracionPlan(String asignatura) {
+        List<ActividadEvaluativa> actividades;
+        try {
+            actividades = notasService.actividadesDeAsignatura(asignatura);
+        } catch (IOException e) {
+            Notification.show("No se pudo cargar el plan: " + e.getMessage());
+            return;
+        }
+
+        Dialog dialogo = new Dialog();
+        dialogo.setHeaderTitle("Plan de evaluación: " + asignatura);
+        VerticalLayout filas = new VerticalLayout();
+        List<TextField> nombres = new ArrayList<>();
+        List<NumberField> porcentajes = new ArrayList<>();
+
+        for (ActividadEvaluativa actividad : actividades) {
+            agregarFilaActividad(filas, nombres, porcentajes,
+                    actividad.getNombre(), actividad.getPorcentaje());
+        }
+
+        Button agregar = new Button("Agregar actividad",
+                event -> agregarFilaActividad(filas, nombres, porcentajes, "", null));
+        Button cancelar = new Button("Cancelar", event -> dialogo.close());
+        Button guardar = new Button("Guardar plan", event -> {
+            List<ActividadEvaluativa> nuevoPlan = new ArrayList<>();
+            for (int indice = 0; indice < nombres.size(); indice++) {
+                Double porcentaje = porcentajes.get(indice).getValue();
+                if (porcentaje == null) {
+                    Notification.show("Ingresa el porcentaje de cada actividad.");
+                    return;
+                }
+                nuevoPlan.add(new ActividadEvaluativa(
+                        nombres.get(indice).getValue(), porcentaje));
+            }
+
+            try {
+                notasService.guardarPlanEvaluacion(asignatura, nuevoPlan);
+                Notification.show("Plan de evaluación guardado.");
+                dialogo.close();
+                mostrarAsignatura(asignatura);
+            } catch (IllegalArgumentException | IOException e) {
+                Notification.show("No se pudo guardar el plan: " + e.getMessage());
+            }
+        });
+
+        dialogo.add(filas, agregar);
+        dialogo.getFooter().add(cancelar, guardar);
+        dialogo.open();
+    }
+
+    private void agregarFilaActividad(VerticalLayout filas, List<TextField> nombres,
+            List<NumberField> porcentajes, String nombreInicial, Double porcentajeInicial) {
+        TextField nombre = new TextField("Actividad");
+        nombre.setValue(nombreInicial);
+        NumberField porcentaje = new NumberField("Porcentaje");
+        porcentaje.setMin(0.1);
+        porcentaje.setMax(100);
+        porcentaje.setStep(0.1);
+        if (porcentajeInicial == null) {
+            porcentaje.clear();
+        } else {
+            porcentaje.setValue(porcentajeInicial);
+        }
+
+        HorizontalLayout fila = new HorizontalLayout(nombre, porcentaje);
+        Button quitar = new Button("Quitar");
+        quitar.addClickListener(event -> {
+            filas.remove(fila);
+            nombres.remove(nombre);
+            porcentajes.remove(porcentaje);
+        });
+        fila.add(quitar);
+        fila.setWidthFull();
+        nombre.setWidthFull();
+        porcentaje.setWidth("150px");
+
+        nombres.add(nombre);
+        porcentajes.add(porcentaje);
+        filas.add(fila);
     }
 
     private void actualizarGrid(Grid<cuentaUsuario> grid, List<cuentaUsuario> estudiantesAsignatura,
@@ -231,6 +333,7 @@ public class ProfesorView extends VerticalLayout {
     private VerticalLayout crearReporte(
             String asignatura, List<cuentaUsuario> estudiantesAsignatura) throws IOException {
         VerticalLayout reporte = new VerticalLayout();
+        reporte.addClassName("reporte-card");
         reporte.setPadding(true);
         reporte.setSpacing(false);
         reporte.getStyle()
@@ -298,7 +401,13 @@ public class ProfesorView extends VerticalLayout {
         Dialog dialogo = new Dialog();
         dialogo.setHeaderTitle("Nota de " + estudiante.getNombre() + " - " + asignatura);
 
-        ComboBox<Integer> periodo = crearSelectorPeriodo();
+        ComboBox<Integer> periodo;
+        try {
+            periodo = crearSelectorActividad(asignatura);
+        } catch (IOException e) {
+            Notification.show("No se pudo cargar el plan: " + e.getMessage());
+            return;
+        }
         NumberField nota = crearCampoNota();
         cargarCampoNota(estudiante, asignatura, periodo.getValue(), nota);
         periodo.addValueChangeListener(event -> {
@@ -309,7 +418,7 @@ public class ProfesorView extends VerticalLayout {
 
         Button guardar = new Button("Guardar nota", event -> {
             if (periodo.getValue() == null || nota.getValue() == null) {
-                Notification.show("Selecciona el período e ingresa una nota.");
+                Notification.show("Selecciona una actividad e ingresa una nota.");
                 return;
             }
             try {
@@ -332,13 +441,24 @@ public class ProfesorView extends VerticalLayout {
         Dialog dialogo = new Dialog();
         dialogo.setHeaderTitle("Confirmar borrado");
 
-        ComboBox<Integer> periodo = crearSelectorPeriodo();
-        Paragraph confirmacion = new Paragraph("¿Seguro de borrar la nota del período "
-                + periodo.getValue() + " de " + estudiante.getNombre() + "?");
+        ComboBox<Integer> periodo;
+        List<ActividadEvaluativa> actividades;
+        try {
+            actividades = notasService.actividadesDeAsignatura(asignatura);
+            periodo = crearSelectorActividad(asignatura);
+        } catch (IOException e) {
+            Notification.show("No se pudo cargar el plan: " + e.getMessage());
+            return;
+        }
+        Paragraph confirmacion = new Paragraph("¿Seguro de borrar la nota de "
+                + actividades.get(periodo.getValue() - 1).getNombre()
+                + " de "
+                + estudiante.getNombre() + "?");
         periodo.addValueChangeListener(event -> {
             if (event.getValue() != null) {
-                confirmacion.setText("¿Seguro de borrar la nota del período "
-                        + event.getValue() + " de " + estudiante.getNombre() + "?");
+                confirmacion.setText("¿Seguro de borrar la nota de "
+                        + actividades.get(event.getValue() - 1).getNombre()
+                        + " de " + estudiante.getNombre() + "?");
             }
         });
 
@@ -349,7 +469,7 @@ public class ProfesorView extends VerticalLayout {
                         asignatura, periodo.getValue());
                 Notification.show(eliminada
                         ? "Nota borrada correctamente."
-                        : "No había una nota guardada para ese período.");
+                        : "No había una nota guardada para esa actividad.");
                 dialogo.close();
                 mostrarAsignatura(asignatura);
             } catch (IOException | IllegalArgumentException e) {
@@ -361,14 +481,23 @@ public class ProfesorView extends VerticalLayout {
         dialogo.open();
     }
 
-    private ComboBox<Integer> crearSelectorPeriodo() {
-        ComboBox<Integer> periodo = new ComboBox<>("Período");
-        periodo.setItems(1, 2, 3);
-        periodo.setItemLabelGenerator(valor -> "Período " + valor
-                + " (" + pesoPeriodo(valor) + "%)");
-        periodo.setValue(1);
-        periodo.setRequiredIndicatorVisible(true);
-        return periodo;
+    private ComboBox<Integer> crearSelectorActividad(String asignatura) throws IOException {
+        List<ActividadEvaluativa> actividades = notasService.actividadesDeAsignatura(asignatura);
+        List<Integer> numeros = new ArrayList<>();
+        for (int indice = 0; indice < actividades.size(); indice++) {
+            numeros.add(indice + 1);
+        }
+
+        ComboBox<Integer> selector = new ComboBox<>("Actividad");
+        selector.setItems(numeros);
+        selector.setItemLabelGenerator(numero -> {
+            ActividadEvaluativa actividad = actividades.get(numero - 1);
+            return actividad.getNombre() + " ("
+                    + formato(actividad.getPorcentaje()) + "%)";
+        });
+        selector.setValue(1);
+        selector.setRequiredIndicatorVisible(true);
+        return selector;
     }
 
     private NumberField crearCampoNota() {
@@ -474,10 +603,6 @@ public class ProfesorView extends VerticalLayout {
         String rol = usuario.getRole();
         return rol != null && ("PROFESOR".equalsIgnoreCase(rol)
                 || "ROLE_PROFESOR".equalsIgnoreCase(rol));
-    }
-
-    private static int pesoPeriodo(int periodo) {
-        return periodo == 3 ? 40 : 30;
     }
 
     private static String formato(double valor) {

@@ -2,6 +2,7 @@ package com.example.notascurso;
 
 import com.vaadin.flow.component.accordion.Accordion;
 import com.vaadin.flow.component.accordion.AccordionPanel;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
@@ -16,29 +17,34 @@ import java.util.List;
 
 @Route(value = "estudiante", layout = DashboardLayout.class)
 @PageTitle("Notas del curso | Estudiante")
+@StyleSheet("css/siggo.css")
 public class EstudianteView extends VerticalLayout {
      final servicio usuarioService = new servicio();
      final NotasService notasService = new NotasService();
 
     public EstudianteView() {
+        addClassName("estudiante-view");
         setWidthFull();
         setPadding(true);
         add(new H2("Mi historial académico"));
 
-        cuentaUsuario estudiante = usuarioService.getUsuarioActual();
-        if (estudiante == null || !esEstudiante(estudiante)) {
+        cuentaUsuario cuenta = usuarioService.getUsuarioActual();
+        if (cuenta == null || !esEstudiante(cuenta)) {
             add(new Paragraph("Inicia sesión con una cuenta de estudiante para consultar tus notas."));
             return;
         }
 
+        Estudiante estudiante = new Estudiante(
+                cuenta.getUsuario(), cuenta.getNombre(), cuenta.getObjetos());
         add(new H3("Estudiante: " + estudiante.getNombre()));
-        List<String> asignaturas = estudiante.getObjetos();
+        List<String> asignaturas = estudiante.getAsignaturas();
         if (asignaturas == null || asignaturas.isEmpty()) {
             add(new Paragraph("No tienes asignaturas registradas en usuarios.txt."));
             return;
         }
 
         Accordion historial = new Accordion();
+        historial.addClassName("historial-academico");
         historial.setWidthFull();
 
         for (String asignatura : asignaturas) {
@@ -47,25 +53,29 @@ public class EstudianteView extends VerticalLayout {
         add(historial);
     }
 
-    private AccordionPanel crearPanel(cuentaUsuario estudiante, String asignatura) {
+    private AccordionPanel crearPanel(Estudiante estudiante, String nombreAsignatura) {
         VerticalLayout contenido = new VerticalLayout();
         contenido.setPadding(true);
         contenido.setSpacing(true);
 
         try {
+            Asignatura asignatura = notasService.obtenerAsignatura(nombreAsignatura);
             HorizontalLayout filaPeriodos = new HorizontalLayout();
             filaPeriodos.setWidthFull();
             filaPeriodos.setSpacing(true);
             filaPeriodos.getStyle().set("overflow-x", "auto");
 
-            for (int periodo = 1; periodo <= 3; periodo++) {
+            for (int indice = 0; indice < asignatura.getActividades().size(); indice++) {
+                int numeroActividad = indice + 1;
+                ActividadEvaluativa actividad = asignatura.getActividades().get(indice);
                 Double valor = notasService.obtenerNota(
-                        estudiante.getUsuario(), asignatura, periodo);
+                        estudiante.getUsuario(), nombreAsignatura, numeroActividad);
                 VerticalLayout tarjetaPeriodo = new VerticalLayout(
-                        new Paragraph("Período " + periodo),
-                        new H3(pesoPeriodo(periodo) + "%"),
+                        new Paragraph(actividad.getNombre()),
+                        new H3(formato(actividad.getPorcentaje()) + "%"),
                         new Paragraph(valor == null ? "Pendiente" : "Nota: " + formato(valor))
                 );
+                tarjetaPeriodo.addClassName("periodo-card");
                 tarjetaPeriodo.setMinWidth("140px");
                 tarjetaPeriodo.setSpacing(false);
                 tarjetaPeriodo.getStyle()
@@ -74,16 +84,16 @@ public class EstudianteView extends VerticalLayout {
                 filaPeriodos.add(tarjetaPeriodo);
             }
             contenido.add(filaPeriodos);
-            contenido.add(new Paragraph(calcularProyeccion(estudiante, asignatura)));
+            contenido.add(new Paragraph(calcularProyeccion(estudiante, nombreAsignatura)));
         } catch (IOException e) {
             Notification.show("No se pudieron leer las notas: " + e.getMessage());
             contenido.add(new Paragraph("No fue posible cargar las notas de esta asignatura."));
         }
 
-        return new AccordionPanel(new H3(asignatura), contenido);
+        return new AccordionPanel(new H3(nombreAsignatura), contenido);
     }
 
-    private String calcularProyeccion(cuentaUsuario estudiante, String asignatura)
+    private String calcularProyeccion(Estudiante estudiante, String asignatura)
             throws IOException {
         double acumulado = notasService.puntosAcumulados(estudiante.getUsuario(), asignatura);
         double pendiente = notasService.porcentajePendiente(estudiante.getUsuario(), asignatura);
@@ -115,10 +125,6 @@ public class EstudianteView extends VerticalLayout {
         String rol = usuario.getRole();
         return rol != null && ("ESTUDIANTE".equalsIgnoreCase(rol)
                 || "ROLE_ESTUDIANTE".equalsIgnoreCase(rol));
-    }
-
-    private static int pesoPeriodo(int periodo) {
-        return periodo == 3 ? 40 : 30;
     }
 
     private static String formato(double valor) {

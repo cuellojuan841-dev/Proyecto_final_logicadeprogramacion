@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -55,5 +56,54 @@ class NotasServiceTest {
                 () -> servicio.guardarNota("estudiante1", "Inglés", 1, 3.25));
         assertThrows(IllegalArgumentException.class,
                 () -> servicio.guardarNota("estudiante1", "Inglés", 4, 3.0));
+    }
+
+    @Test
+    void usaPlanInicialYPermiteCambiarLosPorcentajesSinPerderNotas() throws IOException {
+        Path archivo = directorioTemporal.resolve("notas.txt");
+        NotasService servicio = new NotasService(archivo);
+        servicio.guardarNota("estudiante1", "Física", 1, 4.0);
+
+        assertEquals("Período 1",
+                servicio.actividadesDeAsignatura("Física").get(0).getNombre());
+
+        servicio.guardarPlanEvaluacion("Física", List.of(
+                new ActividadEvaluativa("Taller", 60),
+                new ActividadEvaluativa("Examen", 40)
+        ));
+
+        assertEquals(4.0, servicio.obtenerNota("estudiante1", "Física", 1));
+        assertEquals(4.0, servicio.promedioActual("estudiante1", "Física"), 1e-9);
+        assertEquals("Taller", servicio.actividadesDeAsignatura("Física").get(0).getNombre());
+
+        servicio.guardarNota("estudiante1", "Física", 2, 2.0);
+        NotasService servicioRecargado = new NotasService(archivo);
+        assertEquals(3.2, servicioRecargado.promedioActual("estudiante1", "Física"), 1e-9);
+        assertEquals(0.0, servicioRecargado.porcentajePendiente("estudiante1", "Física"), 1e-9);
+        assertEquals("Taller",
+                servicioRecargado.actividadesDeAsignatura("Física").get(0).getNombre());
+    }
+
+    @Test
+    void noGuardaUnPlanQueNoSumaCienPorCiento() {
+        NotasService servicio = new NotasService(directorioTemporal.resolve("notas.txt"));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> servicio.guardarPlanEvaluacion("Física", List.of(
+                        new ActividadEvaluativa("Taller", 60),
+                        new ActividadEvaluativa("Examen", 30)
+                )));
+    }
+
+    @Test
+    void noPermiteQuitarActividadesQueYaTienenNotas() throws IOException {
+        NotasService servicio = new NotasService(directorioTemporal.resolve("notas.txt"));
+        servicio.guardarNota("estudiante1", "Física", 3, 4.0);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> servicio.guardarPlanEvaluacion("Física", List.of(
+                        new ActividadEvaluativa("Taller", 60),
+                        new ActividadEvaluativa("Examen", 40)
+                )));
     }
 }
