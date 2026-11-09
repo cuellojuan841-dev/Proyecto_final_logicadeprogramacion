@@ -7,23 +7,28 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.router.Route;
 
 import java.io.IOException;
 
 @Route("")
+@StyleSheet("css/siggo.css")
 public class MainView extends VerticalLayout {
 
     private final servicio authService = new servicio();
 
     public MainView() {
+        addClassName("login-view");
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
 
-        H1 titulo = new H1("Iniciar sesión");
+        H1 titulo = new H1("SIGGO UBP");
+        titulo.addClassName("login-title");
         TextField usuarioField = new TextField("Usuario");
         PasswordField passwordField = new PasswordField("Contraseña");
         Button loginButton = new Button("Ingresar");
+        loginButton.addClassName("primary-button");
 
         loginButton.addClickListener(event -> {
             String usuario = usuarioField.getValue();

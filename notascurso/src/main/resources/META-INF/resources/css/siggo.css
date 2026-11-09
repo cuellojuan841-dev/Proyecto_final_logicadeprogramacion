@@ -1,0 +1,182 @@
+:root {
+  --siggo-red: #c62828;
+  --siggo-dark-red: #a51f25;
+  --siggo-light-red: #fff0f0;
+  --siggo-pink: #fff7f7;
+  --siggo-text: #3f3030;
+  --siggo-border: #f0d7d7;
+}
+
+body {
+  background: var(--siggo-pink);
+  color: var(--siggo-text);
+  font-family: "Trebuchet MS", Arial, sans-serif;
+}
+
+vaadin-button::part(button) {
+  background: var(--siggo-red);
+  border: 0;
+  border-radius: 12px;
+  color: white;
+  font-weight: 700;
+  transition: background-color 0.15s ease;
+}
+
+vaadin-button:hover::part(button) {
+  background: var(--siggo-dark-red);
+}
+
+vaadin-text-field::part(input-field),
+vaadin-password-field::part(input-field),
+vaadin-combo-box::part(input-field),
+vaadin-text-area::part(input-field) {
+  background: white;
+  border: 1px solid var(--siggo-border);
+  border-radius: 10px;
+}
+
+vaadin-text-field::part(label),
+vaadin-password-field::part(label),
+vaadin-combo-box::part(label),
+vaadin-text-area::part(label) {
+  color: var(--siggo-dark-red);
+  font-weight: 700;
+}
+
+.login-view {
+  box-sizing: border-box;
+  background: white;
+  border: 2px solid var(--siggo-border);
+  border-top: 8px solid var(--siggo-red);
+  border-radius: 20px;
+  margin: 8vh auto;
+  max-width: 430px;
+  padding: 28px;
+  width: calc(100% - 32px);
+}
+
+.login-title,
+.siggo-brand {
+  color: var(--siggo-red);
+  font-weight: 800;
+}
+
+.siggo-layout::part(navbar) {
+  background: white;
+  border-bottom: 3px solid var(--siggo-red);
+}
+
+.siggo-layout::part(drawer) {
+  background: white;
+  border-right: 1px solid var(--siggo-border);
+}
+
+.siggo-menu h3 {
+  color: var(--siggo-red);
+}
+
+.siggo-menu vaadin-button {
+  width: 100%;
+}
+
+.profesor-view,
+.estudiante-view,
+.contactos-view {
+  background: var(--siggo-pink);
+  box-sizing: border-box;
+  padding: 20px;
+}
+
+.profesor-view h1,
+.profesor-view h2,
+.profesor-view h3,
+.estudiante-view h2,
+.estudiante-view h3,
+.contactos-view h2 {
+  color: var(--siggo-dark-red);
+}
+
+.materia-card,
+.reporte-card,
+.periodo-card,
+.conversacion-card {
+  background: white;
+  border: 1px solid var(--siggo-border);
+  border-radius: 16px;
+  box-shadow: 0 3px 8px rgba(130, 32, 32, 0.08);
+}
+
+.materia-card {
+  border-top: 5px solid var(--siggo-red) !important;
+}
+
+.reporte-card {
+  padding: 16px;
+}
+
+.periodo-card {
+  border-top: 4px solid var(--siggo-red);
+}
+
+.historial-academico::part(summary) {
+  background: white;
+  color: var(--siggo-dark-red);
+  font-weight: 700;
+}
+
+.historial-academico::part(content) {
+  background: var(--siggo-pink);
+}
+
+.siggo-grid {
+  background: white;
+  border: 1px solid var(--siggo-border);
+  border-radius: 14px;
+}
+
+.siggo-grid::part(header-cell) {
+  background: var(--siggo-light-red);
+  color: var(--siggo-dark-red);
+  font-weight: 700;
+}
+
+.siggo-grid::part(row):hover {
+  background: var(--siggo-pink);
+}
+
+.contactos-selector,
+.mensaje-field {
+  max-width: 650px;
+}
+
+.conversacion-card {
+  min-height: 120px;
+  padding: 12px;
+}
+
+.primary-button::part(button) {
+  background: var(--siggo-red);
+}
+
+.secondary-button::part(button) {
+  background: white;
+  border: 2px solid var(--siggo-red);
+  color: var(--siggo-dark-red);
+}
+
+@media (max-width: 600px) {
+  .profesor-view,
+  .estudiante-view,
+  .contactos-view {
+    padding: 12px;
+  }
+
+  .filtros-profesor {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .materias-profesor {
+    overflow-x: auto;
+  }
+}

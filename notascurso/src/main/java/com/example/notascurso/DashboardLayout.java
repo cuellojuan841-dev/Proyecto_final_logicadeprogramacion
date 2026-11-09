@@ -4,26 +4,33 @@ import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.server.VaadinSession;
 
+@StyleSheet("css/siggo.css")
 public class DashboardLayout extends AppLayout {
 
     public DashboardLayout() {
+        addClassName("siggo-layout");
         DrawerToggle menuToggle = new DrawerToggle();
-        H3 titulo = new H3("Dashboard");
+        H3 titulo = new H3("SIGGO UBP");
+        titulo.addClassName("siggo-brand");
         titulo.getStyle().set("margin", "0");
         addToNavbar(menuToggle, titulo);
 
         Button notas = new Button("Notas");
+        notas.addClassName("nav-button");
         notas.addClickListener(event -> abrirVistaDeNotas());
 
         Button contactos = new Button("Contactos");
+        contactos.addClassName("nav-button");
         contactos.addClickListener(event -> UI.getCurrent().navigate("contactos"));
 
         Button salir = new Button("Salir");
+        salir.addClassName("nav-button");
         salir.addClickListener(event -> cerrarSesion());
 
         VerticalLayout menu = new VerticalLayout(
@@ -33,6 +40,7 @@ public class DashboardLayout extends AppLayout {
                 salir
         );
 
+        menu.addClassName("siggo-menu");
         menu.setPadding(true);
         menu.setSpacing(true);
         addToDrawer(menu);

@@ -3,6 +3,7 @@ package com.example.notascurso;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
@@ -21,6 +22,7 @@ import java.util.List;
 
 @Route(value = "contactos", layout = DashboardLayout.class)
 @PageTitle("Notas del curso | Contactos")
+@StyleSheet("css/siggo.css")
 public class ContactosView extends VerticalLayout {
 
     servicio servicioUsuarios = new servicio();
@@ -32,6 +34,7 @@ public class ContactosView extends VerticalLayout {
     Path archivo = Path.of("mensajes.txt");
 
     public ContactosView() {
+        addClassName("contactos-view");
         usuarioActual = servicioUsuarios.getUsuarioActual();
         if (usuarioActual == null) {
             UI.getCurrent().navigate("");
@@ -51,12 +54,17 @@ public class ContactosView extends VerticalLayout {
         }
 
         Button actualizar = new Button("Actualizar mensajes");
+        actualizar.addClassName("secondary-button");
         actualizar.addClickListener(event -> cargarConversacion());
 
         Button enviar = new Button("Enviar mensaje");
+        enviar.addClassName("primary-button");
         enviar.addClickListener(event -> enviarMensaje());
 
         selector.addValueChangeListener(event -> cargarConversacion());
+        selector.addClassName("contactos-selector");
+        campoMensaje.addClassName("mensaje-field");
+        conversacion.addClassName("conversacion-card");
 
         add(new H2("Contactos"), selector, actualizar, conversacion, campoMensaje, enviar);
         cargarConversacion();
