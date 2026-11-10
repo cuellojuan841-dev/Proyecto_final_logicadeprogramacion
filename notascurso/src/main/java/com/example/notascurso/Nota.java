@@ -1,6 +1,8 @@
 package com.example.notascurso;
 
+// Representa una calificación de una actividad para un estudiante y una asignatura.
 public class Nota {
+    // Estos cuatro datos identifican la nota y su valor dentro del curso.
     private final String usuarioEstudiante;
     private final String asignatura;
     private final int periodo;
