@@ -19,6 +19,7 @@ public class MainView extends VerticalLayout {
     private final servicio authService = new servicio();
 
     public MainView() {
+        // Esta es la pantalla inicial: preparo los campos y el botón del inicio de sesión.
         addClassName("login-view");
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
@@ -30,18 +31,22 @@ public class MainView extends VerticalLayout {
         Button loginButton = new Button("Ingresar");
         loginButton.addClassName("primary-button");
 
+        // Al hacer clic, tomo lo que se escribió y lo mando a validar.
         loginButton.addClickListener(event -> {
             String usuario = usuarioField.getValue();
             String password = passwordField.getValue();
 
             cuentaUsuario usuarioEncontrado;
             try {
+                // El servicio busca la cuenta en usuarios.txt y guarda la sesión si coincide.
                 usuarioEncontrado = authService.autenticar(usuario, password);
             } catch (IOException e) {
+                // Si no se puede leer el archivo de usuarios, no intento continuar el ingreso.
                 Notification.show("No se pudieron cargar los usuarios: " + e.getMessage());
                 return;
             }
 
+            // null significa que no hubo una fila con ese usuario y esa contraseña.
             if (usuarioEncontrado == null) {
                 Notification.show("Usuario o contraseña incorrectos");
                 return;
@@ -50,6 +55,7 @@ public class MainView extends VerticalLayout {
             Notification.show("Bienvenido " + usuarioEncontrado.getNombre());
 
             String role = usuarioEncontrado.getRole();
+            // Uso el rol de la cuenta autenticada para abrir la pantalla correcta.
             if ("PROFESOR".equalsIgnoreCase(role) || "ROLE_PROFESOR".equalsIgnoreCase(role)) {
                 UI.getCurrent().navigate("profesor");
             } else if ("ESTUDIANTE".equalsIgnoreCase(role) || "ROLE_ESTUDIANTE".equalsIgnoreCase(role)) {

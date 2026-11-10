@@ -34,6 +34,7 @@ public class ContactosView extends VerticalLayout {
     Path archivo = Path.of("mensajes.txt");
 
     public ContactosView() {
+        // La vista usa la sesión para saber quién envía y recibe los mensajes.
         addClassName("contactos-view");
         usuarioActual = servicioUsuarios.getUsuarioActual();
         // Sin una cuenta en sesión no se puede abrir la sección de mensajes.
@@ -74,6 +75,7 @@ public class ContactosView extends VerticalLayout {
     }
 
     void configurarContactos() {
+        // Solo permito conversaciones entre profesor y estudiante, excluyendo al usuario actual.
         List<cuentaUsuario> contactos = new ArrayList<>();
         // Recorro usuarios y solo agrego el otro rol, nunca a la cuenta actual.
         for (cuentaUsuario usuario : usuarios) {
@@ -91,6 +93,7 @@ public class ContactosView extends VerticalLayout {
     }
 
     void cargarConversacion() {
+        // Limpio el panel antes de dibujar de nuevo los mensajes del contacto seleccionado.
         conversacion.removeAll();
         cuentaUsuario contacto = selector.getValue();
 
@@ -141,6 +144,7 @@ public class ContactosView extends VerticalLayout {
     }
 
     boolean esDeEstaConversacion(String[] datos, cuentaUsuario contacto) {
+        // datos contiene emisor, receptor y texto; comparo ambos sentidos de la conversación.
         String usuario = usuarioActual.getUsuario();
         String otroUsuario = contacto.getUsuario();
 
@@ -149,6 +153,7 @@ public class ContactosView extends VerticalLayout {
     }
 
     void enviarMensaje() {
+        // Valido lo ingresado antes de convertirlo en una línea del archivo de mensajes.
         cuentaUsuario contacto = selector.getValue();
         String texto = campoMensaje.getValue();
 

@@ -5,8 +5,10 @@ import java.util.List;
 
 public class Asignatura {
     private String nombre;
+    // La lista define las actividades y pesos usados para calcular sus notas.
     private List<ActividadEvaluativa> actividades = new ArrayList<>();
 
+    // Al crear la materia, la lista de actividades empieza vacía hasta cargar su plan.
     public Asignatura(String nombre) {
         this.nombre = nombre;
     }
