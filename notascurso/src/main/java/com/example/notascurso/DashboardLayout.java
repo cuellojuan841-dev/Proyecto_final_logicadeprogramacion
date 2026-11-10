@@ -48,6 +48,7 @@ public class DashboardLayout extends AppLayout {
 
     private void cerrarSesion() {
         VaadinSession session = VaadinSession.getCurrent();
+        // Limpio la cuenta guardada y regreso al inicio.
         if (session != null) {
             session.setAttribute(cuentaUsuario.class, null);
         }
@@ -56,12 +57,14 @@ public class DashboardLayout extends AppLayout {
 
     private void abrirVistaDeNotas() {
         cuentaUsuario usuario = new servicio().getUsuarioActual();
+        // Si se perdió la sesión, la persona debe volver a iniciar sesión.
         if (usuario == null) {
             UI.getCurrent().navigate("");
             return;
         }
 
         String rol = usuario.getRole();
+        // La ruta de notas cambia según el rol guardado en la sesión.
         if ("PROFESOR".equalsIgnoreCase(rol) || "ROLE_PROFESOR".equalsIgnoreCase(rol)) {
             UI.getCurrent().navigate("profesor");
         } else if ("ESTUDIANTE".equalsIgnoreCase(rol)

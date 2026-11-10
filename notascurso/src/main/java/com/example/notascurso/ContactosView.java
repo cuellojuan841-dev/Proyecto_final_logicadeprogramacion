@@ -36,6 +36,7 @@ public class ContactosView extends VerticalLayout {
     public ContactosView() {
         addClassName("contactos-view");
         usuarioActual = servicioUsuarios.getUsuarioActual();
+        // Sin una cuenta en sesión no se puede abrir la sección de mensajes.
         if (usuarioActual == null) {
             UI.getCurrent().navigate("");
             return;
@@ -47,9 +48,11 @@ public class ContactosView extends VerticalLayout {
         conversacion.setWidthFull();
 
         try {
+            // Cargo usuarios para armar la lista de contactos permitidos.
             usuarios = servicioUsuarios.cargarUsuarios();
             configurarContactos();
         } catch (IOException e) {
+            // Informo el problema sin tumbar la vista completa.
             Notification.show("No se pudieron cargar los contactos: " + e.getMessage());
         }
 
@@ -72,6 +75,7 @@ public class ContactosView extends VerticalLayout {
 
     void configurarContactos() {
         List<cuentaUsuario> contactos = new ArrayList<>();
+        // Recorro usuarios y solo agrego el otro rol, nunca a la cuenta actual.
         for (cuentaUsuario usuario : usuarios) {
             if (!usuario.getUsuario().equals(usuarioActual.getUsuario())
                     && esEstudiante(usuarioActual) && esProfesor(usuario)) {
@@ -90,11 +94,13 @@ public class ContactosView extends VerticalLayout {
         conversacion.removeAll();
         cuentaUsuario contacto = selector.getValue();
 
+        // Si todavía no eligieron a quién escribir, muestro una indicación y salgo.
         if (contacto == null) {
             conversacion.add(new Paragraph("Selecciona un contacto para ver los mensajes."));
             return;
         }
 
+        // El archivo puede no existir hasta que se envía el primer mensaje.
         if (!Files.exists(archivo)) {
             conversacion.add(new Paragraph("Todavía no hay mensajes. Puedes escribir el primero."));
             return;
@@ -104,6 +110,7 @@ public class ContactosView extends VerticalLayout {
             List<String> lineas = Files.readAllLines(archivo, StandardCharsets.UTF_8);
             boolean hayMensajes = false;
 
+            // Reviso cada mensaje y muestro únicamente los de esta conversación.
             for (int indice = 0; indice < lineas.size(); indice++) {
                 String linea = lineas.get(indice);
                 if (linea.isBlank()) {
@@ -111,12 +118,14 @@ public class ContactosView extends VerticalLayout {
                 }
 
                 String[] datos = linea.split("\\|", 3);
+                // Si la línea no tiene emisor, receptor y texto, aviso dónde está el error.
                 if (datos.length != 3) {
                     Notification.show("Formato inválido en mensajes.txt, línea "
                             + (indice + 1));
                     return;
                 }
 
+                // La misma conversación incluye mensajes enviados y recibidos.
                 if (esDeEstaConversacion(datos, contacto)) {
                     conversacion.add(new Paragraph(datos[0] + ": " + datos[2]));
                     hayMensajes = true;
@@ -143,6 +152,7 @@ public class ContactosView extends VerticalLayout {
         cuentaUsuario contacto = selector.getValue();
         String texto = campoMensaje.getValue();
 
+        // Primero verifico que haya destinatario y texto para guardar.
         if (contacto == null) {
             Notification.show("Selecciona un contacto primero.");
             return;
@@ -153,6 +163,7 @@ public class ContactosView extends VerticalLayout {
             return;
         }
 
+        // No permito separadores ni saltos porque cambiarían la estructura de la fila.
         if (texto.contains("|") || texto.contains("\n") || texto.contains("\r")) {
             Notification.show("El mensaje no puede contener | ni saltos de línea.");
             return;
@@ -162,12 +173,14 @@ public class ContactosView extends VerticalLayout {
                 + "|" + texto.trim() + System.lineSeparator();
 
         try {
+            // Creo el archivo si falta y agrego el mensaje al final sin borrar los anteriores.
             Files.writeString(archivo, linea, StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE, StandardOpenOption.APPEND);
             campoMensaje.clear();
             cargarConversacion();
             Notification.show("Mensaje enviado y guardado.");
         } catch (IOException e) {
+            // Si no se pudo escribir el archivo, se lo comunico a quien envió el mensaje.
             Notification.show("No se pudo guardar el mensaje: " + e.getMessage());
         }
     }
